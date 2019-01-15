@@ -81,10 +81,10 @@ void init_JQ () {
         jobQueue[i] = NULL;
 }
 
-void sort_JQ() { //À¯Àú°¡ pid¸¦ ¹«ÀÛÀ§ÀÇ ¼ø¼­·Î ³Ö´Â °ÍÀ» ´ëºñÇØ¼­ pid¸¦ ±âÁØÀ¸·Î ¿À¸§Â÷¼øÀ¸·Î Á¤·ÄÇØÁØ´Ù. 
-	//°°Àº ½Ã°£¿¡ µµÂøÇÑ ÇÁ·Î¼¼½ºµéÀÌ pid¼ø¼­·Î Á¤·ÄµÇ´Â È¿°ú°¡ ÀÖ´Ù. 
-	
-	//À§Å°ÇÇµð¾ÆÀÇ insertion sort»ç¿ë -> ¼º´É °í·Á ¾ÈÇÔ
+void sort_JQ() {
+    //Sort the pid in ascending order, in case the user inserts pid in random order.
+    //Processes arriving at the same time are sorted in pid order.
+    //Using insertion sort in Wikipedia -> Do not consider performance
     int i, j;
     processPointer remember;
     for ( i = 1; i < cur_proc_num_JQ; i++ )
@@ -96,7 +96,10 @@ void sort_JQ() { //À¯Àú°¡ pid¸¦ ¹«ÀÛÀ§ÀÇ ¼ø¼­·Î ³Ö´Â °ÍÀ» ´ëºñÇØ¼­ pid¸¦ ±âÁØÀ¸·
     }
 }
 
-int getProcByPid_JQ (int givenPid) { //readyQueue¿¡¼­ ÇØ´ç pid¸¦ °¡Áö°í ÀÖ´Â processÀÇ index¸¦ ¸®ÅÏÇÑ´Ù.
+int getProcByPid_JQ (int givenPid) { 
+
+    //
+    //Returns the index of the process that has the corresponding pid in readyQueue.
     int result = -1;
     int i;
     for(i = 0; i < cur_proc_num_JQ; i++) {
@@ -122,7 +125,9 @@ void insertInto_JQ (processPointer proc) {
     }
 }
 
-processPointer removeFrom_JQ (processPointer proc) { //process ÇÏ³ª¸¦ readyQueue¿¡¼­ Á¦°ÅÇÏ°í ºó °ø°£À» ¼öÃàÀ» ÅëÇØ ¾ø¾Ø´Ù.
+processPointer removeFrom_JQ (processPointer proc) { 
+    // 
+    //Remove one process from the readyQueue and shrink the empty space through contraction.
     if(cur_proc_num_JQ>0) {
         int temp = getProcByPid_JQ(proc->pid);
         if (temp == -1) {
@@ -146,7 +151,8 @@ processPointer removeFrom_JQ (processPointer proc) { //process ÇÏ³ª¸¦ readyQueue
     }
 }
 
-void clear_JQ() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
+void clear_JQ() { 
+    //Free memory
     int i;
     for(i = 0; i < MAX_PROCESS_NUM; i++) {
         free(jobQueue[i]);
@@ -155,9 +161,9 @@ void clear_JQ() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
     cur_proc_num_JQ = 0;
 }
 
-void print_JQ() { //debug¸¦ À§ÇÑ print ÇÔ¼ö
-    //puts("\nprint_JQ()");
-	printf("ÃÑ ÇÁ·Î¼¼½º ¼ö: %d\n", cur_proc_num_JQ);
+void print_JQ() {
+        // print function for debugging ise
+	printf("Total process count : %d\n", cur_proc_num_JQ);
 	int i;
 	puts("pid    priority    arrival_time    CPU burst    IO burst");
 	puts("========================================================");
@@ -171,40 +177,37 @@ processPointer cloneJobQueue[MAX_PROCESS_NUM];
 int cur_proc_num_clone_JQ = 0;
 
 void clone_JQ() {
-	// ¿©·¯ ½Ã¹Ä·¹ÀÌ¼ÇÀ» Ã³¸®ÇÏ±â À§ÇØ cloneÀ» ¸¸µé¾îÁØ´Ù. 
-	
+	//
+        //Create a clone to handle multiple simulations.
 	int i;
 	for (i=0; i< MAX_PROCESS_NUM; i++) { //init clone
 		cloneJobQueue[i] = NULL;
 	}
 	
 	for (i=0; i<cur_proc_num_JQ; i++) {
-		
 		processPointer newProcess = (processPointer)malloc(sizeof(struct myProcess));
-        newProcess->pid = jobQueue[i]->pid;
-        newProcess->priority = jobQueue[i]->priority;
-        newProcess->arrivalTime = jobQueue[i]->arrivalTime;
-        newProcess->CPUburst = jobQueue[i]->CPUburst;
-        newProcess->IOburst = jobQueue[i]->IOburst;
-        newProcess->CPUremainingTime = jobQueue[i]->CPUremainingTime;
-        newProcess->IOremainingTime = jobQueue[i]->IOremainingTime;
-        newProcess->waitingTime = jobQueue[i]->waitingTime;
-        newProcess->turnaroundTime = jobQueue[i]->turnaroundTime;
-        newProcess->responseTime = jobQueue[i]->responseTime;
-        
-        cloneJobQueue[i] = newProcess;
+		newProcess->pid = jobQueue[i]->pid;
+		newProcess->priority = jobQueue[i]->priority;
+		newProcess->arrivalTime = jobQueue[i]->arrivalTime;
+		newProcess->CPUburst = jobQueue[i]->CPUburst;
+		newProcess->IOburst = jobQueue[i]->IOburst;
+		newProcess->CPUremainingTime = jobQueue[i]->CPUremainingTime;
+		newProcess->IOremainingTime = jobQueue[i]->IOremainingTime;
+		newProcess->waitingTime = jobQueue[i]->waitingTime;
+		newProcess->turnaroundTime = jobQueue[i]->turnaroundTime;
+		newProcess->responseTime = jobQueue[i]->responseTime;
+		cloneJobQueue[i] = newProcess;
 	}
 	
 	cur_proc_num_clone_JQ = cur_proc_num_JQ;
 }
 
 void loadClone_JQ() {
-	// Å¬·ÐÀ¸·ÎºÎÅÍ JQ¿¡ º¹»çÇÑ´Ù. 
+	// Copy from clone to JQ
 	clear_JQ(); //clear JQ
 	int i;
 	for (i=0; i<cur_proc_num_clone_JQ; i++) {
-	
-		processPointer newProcess = (processPointer)malloc(sizeof(struct myProcess));
+	    processPointer newProcess = (processPointer)malloc(sizeof(struct myProcess));
 	    newProcess->pid = cloneJobQueue[i]->pid;
 	    newProcess->priority = cloneJobQueue[i]->priority;
 	    newProcess->arrivalTime = cloneJobQueue[i]->arrivalTime;
@@ -215,7 +218,6 @@ void loadClone_JQ() {
 	    newProcess->waitingTime = cloneJobQueue[i]->waitingTime;
 	    newProcess->turnaroundTime = cloneJobQueue[i]->turnaroundTime;
 	    newProcess->responseTime = cloneJobQueue[i]->responseTime;
-	    
 	    jobQueue[i] = newProcess;
 	}
 	
@@ -223,7 +225,7 @@ void loadClone_JQ() {
 	//print_JQ();
 }
 
-void clearClone_JQ() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
+void clearClone_JQ() { //Free resource
     int i;
     for(i = 0; i < MAX_PROCESS_NUM; i++) {
         free(cloneJobQueue[i]);
@@ -236,9 +238,10 @@ processPointer runningProcess = NULL;
 int timeConsumed = 0;
 
 //readyQueue
-//arrivalTimeÀÌ ¼ø¼­´ë·Î Á¤·ÄµÈ Ã¤·Î process°¡ createµÈ´Ù°í °¡Á¤
+//
+//Assume that process is created with arrivalTime sorted in order¤
 processPointer readyQueue[MAX_PROCESS_NUM];
-int cur_proc_num_RQ = 0; // ÇöÀç processÀÇ ¼ö
+int cur_proc_num_RQ = 0; // The number of current processes
 
 void init_RQ () {
     cur_proc_num_RQ = 0;
@@ -247,7 +250,8 @@ void init_RQ () {
         readyQueue[i] = NULL;
 }
 
-int getProcByPid_RQ (int givenPid) { //readyQueue¿¡¼­ ÇØ´ç pid¸¦ °¡Áö°í ÀÖ´Â processÀÇ index¸¦ ¸®ÅÏÇÑ´Ù.
+int getProcByPid_RQ (int givenPid) { //
+//Returns the index of the process that has the corresponding pid in readyQueue.
     int result = -1;
     int i;
     for(i = 0; i < cur_proc_num_RQ; i++) {
@@ -273,7 +277,9 @@ void insertInto_RQ (processPointer proc) {
     }
 }
 
-processPointer removeFrom_RQ (processPointer proc) { //process ÇÏ³ª¸¦ readyQueue¿¡¼­ Á¦°ÅÇÏ°í ºó °ø°£À» ¼öÃàÀ» ÅëÇØ ¾ø¾Ø´Ù.
+processPointer removeFrom_RQ (processPointer proc) { 
+    //
+//Remove one process from the readyQueue and shrink the empty space through contraction.
     if(cur_proc_num_RQ>0) {
         int temp = getProcByPid_RQ(proc->pid);
         if (temp == -1) {
@@ -297,7 +303,7 @@ processPointer removeFrom_RQ (processPointer proc) { //process ÇÏ³ª¸¦ readyQueue
     }
 }
 
-void clear_RQ() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
+void clear_RQ() { //free memory
     int i;
     for(i = 0; i < MAX_PROCESS_NUM; i++) {
         free(readyQueue[i]);
@@ -306,13 +312,13 @@ void clear_RQ() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
     cur_proc_num_RQ = 0;
 }
 
-void print_RQ() { //debug¸¦ À§ÇÑ print ÇÔ¼ö
+void print_RQ() { //USED FOR DEBUGGINGö
     puts("\nprintf_RQ()");
 	int i;
     for(i = 0; i < cur_proc_num_RQ; i++) {
         printf("%d ", readyQueue[i]->pid);   
     }
-    printf("\nÃÑ ÇÁ·Î¼¼½º ¼ö: %d\n", cur_proc_num_RQ);
+    printf("\n Total process count: %d\n", cur_proc_num_RQ);
 }
 
 //waitingQueue
@@ -353,7 +359,8 @@ void insertInto_WQ (processPointer proc) {
     //print_WQ();
 }
 
-processPointer removeFrom_WQ (processPointer proc) { //process ÇÏ³ª¸¦ waitingQueue¿¡¼­ Á¦°ÅÇÏ°í ºó °ø°£À» ¼öÃàÀ» ÅëÇØ ¾ø¾Ø´Ù.
+processPointer removeFrom_WQ (processPointer proc) { //
+//Remove one process from the waitingQueue and shrink the empty space through contraction
     if(cur_proc_num_WQ>0) {
         int temp = getProcByPid_WQ(proc->pid);
         if (temp == -1) {
@@ -379,7 +386,7 @@ processPointer removeFrom_WQ (processPointer proc) { //process ÇÏ³ª¸¦ waitingQue
     }
 }
 
-void clear_WQ() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
+void clear_WQ() { 
     int i;
     for(i = 0; i < MAX_PROCESS_NUM; i++) {
         free(waitingQueue[i]);
@@ -388,7 +395,7 @@ void clear_WQ() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
     cur_proc_num_WQ = 0;
 }
 
-void print_WQ() { //debug¸¦ À§ÇÑ print ÇÔ¼ö
+void print_WQ() { 
     puts("\nprintf_WQ()");
 	int i;
     
@@ -409,7 +416,7 @@ void init_T () {
         terminated[i] = NULL;
 }
 
-void clear_T() { //¸Þ¸ð¸® È¸¼ö¿ë ÇÔ¼ö
+void clear_T() { //free mem
     int i;
     for(i = 0; i < MAX_PROCESS_NUM; i++) {
         free(terminated[i]);
@@ -435,11 +442,14 @@ void print_T() { //debug¸¦ À§ÇÑ print ÇÔ¼ö
     for(i = 0; i < cur_proc_num_T; i++) {
         printf("%d ", terminated[i]->pid);   
     }
-    printf("\nÃÑ ÇÁ·Î¼¼½º ¼ö: %d\n", cur_proc_num_T);
+    printf("\n Total Process Count: %d\n", cur_proc_num_T);
 }
 
-processPointer createProcess(int pid, int priority, int arrivalTime, int CPUburst, int IOburst) { //ÇÁ·Î¼¼½º ÇÏ³ª¸¦ ¸¸µç´Ù.
-    //·£´ýÀ¸·Î »ý¼ºÇØ¼­ ¿©·¯ ¾Ë°í¸®Áò Å×½ºÆ®ÇÏ´Â °Ç cloneÀ» »ç¿ëÇÏÀÚ
+processPointer createProcess(int pid, int priority, int arrivalTime, int CPUburst, int IOburst) { 
+
+
+    //Create a process.
+    // Use randomly generated clone to test multiple algorithms
 
     if (arrivalTime > MAX_TIME_UNIT || arrivalTime < 0) {
         printf("<ERROR> arrivalTime should be in [0..MAX_TIME_UNIT]\n");
@@ -474,11 +484,12 @@ processPointer createProcess(int pid, int priority, int arrivalTime, int CPUburs
 
 processPointer FCFS_alg() {
         
-        processPointer earliestProc = readyQueue[0]; //°¡Àå ¸ÕÀú µµÂøÇÑ process¸¦ Ã£´Â´Ù.
+        processPointer earliestProc = readyQueue[0];  //Find the process that arrived first
         
         if (earliestProc != NULL){
             
-            if(runningProcess != NULL) { //ÀÌ¹Ì ¼öÇàÁßÀÎ ÇÁ·Î¼¼½º°¡ ÀÖ¾ú´Ù¸é preemptive°¡ ¾Æ´Ï¹Ç·Î ±â´Ù¸°´Ù.  
+            if(runningProcess != NULL) { //
+                                                        //If there is already a process that is already running, it is not preemptive. 
                 /*
 				if(runningProcess->arrivalTime > earliestProc->arrivalTime)
 					puts("<ERROR> Invalid access."); //¿À·ù¸Þ¼¼Áö¸¦ Ãâ·ÂÇÑ´Ù. 
@@ -716,7 +727,7 @@ processPointer LISC_alg(int preemptive) { //Longest IO burst, Shortest CPU burst
 	}
 }
 
-processPointer schedule(int alg, int preemptive, int time_quantum) { //timelimit ½Ã°£µ¿¾È scheduling ¾Ë°í¸®ÁòÀ» ÁøÇàÇÑ´Ù.
+processPointer schedule(int alg, int preemptive, int time_quantum) { //The scheduling algorithm proceeds during the timelimit time.
 	processPointer selectedProcess = NULL;
     
     switch(alg) {
@@ -745,8 +756,8 @@ processPointer schedule(int alg, int preemptive, int time_quantum) { //timelimit
     return selectedProcess;
 }
 
-void simulate(int amount, int alg, int preemptive, int time_quantum) { //amount ½ÃÁ¡ÀÌ Èå¸¥ µÚÀÇ »óÅÂ -> ¹Ýº¹¹®¿¡ ³Ö¾î¼­ »ç¿ë 
-	//¿ì¼±, Job queue¿¡¼­ ÇØ´ç ½Ã°£¿¡ µµÂøÇÑ ÇÁ·Î¼¼½ºµéÀ» ready queue¿¡ ¿Ã·ÁÁØ´Ù. 
+void simulate(int amount, int alg, int preemptive, int time_quantum) {
+// First, put the processes arriving at the relevant time on the ready queue in the job queue. 
 	processPointer tempProcess = NULL;
 	int jobNum = cur_proc_num_JQ;
 	int i;
@@ -760,16 +771,18 @@ void simulate(int amount, int alg, int preemptive, int time_quantum) { //amount 
 	runningProcess = schedule(alg, preemptive, time_quantum); //ÀÌ¹ø turn¿¡ ¼öÇàµÉ process¸¦ pick upÇÑ´Ù. 
 	
 	printf("%d: ",amount);
-	if(prevProcess != runningProcess) { //ÀÌÀü°ú ´Ù¸¥ ÇÁ·Î¼¼½º°¡ running »óÅÂ·Î µÇ¾úÀ» °æ¿ì 
-		//printf("´Ù¸¥ ÇÁ·Î¼¼½º·Î ¹Ù²î¾ú°í, ¹æ±Ý Àü ÇÁ·Î¼¼½º°¡ runnig µÈ ½Ã°£Àº %d¾ß.\n",timeConsumed);
-		timeConsumed = 0; //running¿¡ ¼Ò¿äµÈ ½Ã°£À» ÃÊ±âÈ­½ÃÄÑÁØ´Ù. 
+	if(prevProcess != runningProcess) { //
+//When a process other than the previous one is running.
+		timeConsumed = 0; //
+//Initializes the time spent in running.
 		
-		if(runningProcess->responseTime == -1) { //responseTimeÀ» ±â·ÏÇØµÐ´Ù. 
+		if(runningProcess->responseTime == -1) { //record the respose time
 			runningProcess->responseTime = amount - runningProcess->arrivalTime;
 		}
 	}
 	
-    for(i = 0; i < cur_proc_num_RQ; i++) { //readyQueue¿¡ ÀÖ´Â processµéÀ» ±â´Ù¸®°Ô ÇÑ´Ù. 
+    for(i = 0; i < cur_proc_num_RQ; i++) { //
+//Allows you to wait for processes in readyQueue. 
         
         if(readyQueue[i]) {
         	readyQueue[i]->waitingTime++;
@@ -777,32 +790,35 @@ void simulate(int amount, int alg, int preemptive, int time_quantum) { //amount 
     	}
     }
 	
-    for(i = 0; i < cur_proc_num_WQ; i++) { //waitingQueue¿¡ ÀÖ´Â processµéÀÌ IO ÀÛ¾÷À» ¼öÇàÇÑ´Ù. 
+    for(i = 0; i < cur_proc_num_WQ; i++) { //Processes in waitingQueue perform IO operations. 
 		if(waitingQueue[i]) {
 			//waitingQueue[i]->waitingTime++;
 			waitingQueue[i]->turnaroundTime++;
 			waitingQueue[i]->IOremainingTime--;
 			
-			if(waitingQueue[i]->IOremainingTime <= 0 ) { //IO ÀÛ¾÷ÀÌ ¿Ï·áµÈ °æ¿ì 
+			if(waitingQueue[i]->IOremainingTime <= 0 ) { //When I/O completed 
 				printf("(pid: %d) -> IO complete, ", waitingQueue[i]->pid); 
-				insertInto_RQ(removeFrom_WQ(waitingQueue[i--])); //ready queue·Î ÇÁ·Î¼¼½º¸¦ ´Ù½Ã µ¹·Áº¸³»ÁØ´Ù. 
+				insertInto_RQ(removeFrom_WQ(waitingQueue[i--])); //Send process back to ready queue. 
 				//print_WQ();
 			}
 		}
 	}
 	
-    if(runningProcess != NULL) { //running ÁßÀÎ ÇÁ·Î¼¼½º°¡ ÀÖ´Ù¸é ½ÇÇà½ÃÅ´ 
+    if(runningProcess != NULL) { //
+//Runs any processes that are running
         runningProcess->CPUremainingTime --;
         runningProcess->turnaroundTime ++;
         timeConsumed ++;
         printf("(pid: %d) -> running ",runningProcess->pid);
         
-        if(runningProcess->CPUremainingTime <= 0) { //¸ðµÎ ¼öÇàÀÌ µÈ »óÅÂ¶ó¸é, terminated·Î º¸³»ÁØ´Ù. 
+        if(runningProcess->CPUremainingTime <= 0) { // If all is done, it is terminated.
 			insertInto_T(runningProcess);
 			runningProcess = NULL;
 			printf("-> terminated");
-		} else { //¾ÆÁ÷ ¼öÇàÇÒ ½Ã°£ÀÌ ³²¾ÆÀÖÀ» °æ¿ì 
-			if(runningProcess->IOremainingTime > 0) { //IO ÀÛ¾÷À» ¼öÇàÇØ¾ß ÇÑ´Ù¸é, waiting queue·Î º¸³»ÁØ´Ù. 
+		} else { //
+//If there is still time left to perform 
+			if(runningProcess->IOremainingTime > 0) { //
+//If IO needs to be done, it is sent to waiting queue
 				insertInto_WQ(runningProcess);
 				runningProcess = NULL;
 				printf("-> IO request");	
@@ -810,7 +826,8 @@ void simulate(int amount, int alg, int preemptive, int time_quantum) { //amount 
 		}
 		
         printf("\n");
-    } else { //running ÁßÀÎ ÇÁ·Î¼¼½º°¡ ¾ø´Ù¸é idleÀ» Ãâ·ÂÇÔ 
+    } else { //
+//Displays idle if no processes are running 
     	printf("idle\n");
     	Computation_idle++;
 	}
@@ -898,7 +915,8 @@ void startSimulation(int alg, int preemptive, int time_quantum, int count) {
         return;
     }
 	
-	int initial_proc_num = cur_proc_num_JQ; //½ÇÁ¦ ½Ã¹Ä·¹ÀÌ¼ÇÀ» ÇÏ±â Àü ÇÁ·Î¼¼½ºÀÇ ¼ö¸¦ ÀúÀåÇØµÐ´Ù. 
+	int initial_proc_num = cur_proc_num_JQ; //
+//Store the number of processes before the actual simulation. 
 	
 	int i;
 	if(cur_proc_num_JQ <= 0) {
