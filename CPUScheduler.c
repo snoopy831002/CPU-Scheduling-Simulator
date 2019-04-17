@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #define MAX_TIME_UNIT 1000
-#define MAX_PROCESS_NUM 30
+#define MAX_PROCESS_NUM 200
 #define MAX_ALGORITHM_NUM 10
 
 #define FCFS 0
@@ -16,6 +16,8 @@
 #define FALSE 0
 
 #define TIME_QUANTUM 3
+
+int lastResponse = 0;
 
 //process
 typedef struct myProcess* processPointer;
@@ -48,6 +50,8 @@ typedef struct evaluation {
 	int avg_responseTime;
 	double CPU_util;
 	int completed;
+	int var;
+	int var_t;
 }evaluation;
 
 evalPointer evals[MAX_ALGORITHM_NUM];
@@ -426,6 +430,7 @@ void clear_T() { //free mem
 }
 
 void insertInto_T (processPointer proc) {
+    printf("3===B cur_proc_num_T: %d, MAX_PROCESS_NUM: %d\n",cur_proc_num_T,MAX_PROCESS_NUM);
     if(cur_proc_num_T<MAX_PROCESS_NUM) {
         terminated[cur_proc_num_T++] = proc;
     }
@@ -447,9 +452,7 @@ void print_T() { //debug를 위한 print 함수
 
 processPointer createProcess(int pid, int priority, int arrivalTime, int CPUburst, int IOburst) { 
 
-
     //Create a process.
-    // Use randomly generated clone to test multiple algorithms
 
     if (arrivalTime > MAX_TIME_UNIT || arrivalTime < 0) {
         printf("<ERROR> arrivalTime should be in [0..MAX_TIME_UNIT]\n");
@@ -462,21 +465,19 @@ processPointer createProcess(int pid, int priority, int arrivalTime, int CPUburs
         printf("<USAGE> createProcess(int pid, int priority, int arrivalTime, int CPUburst, int IOburst)\n");
         return NULL;
     }
-        processPointer newProcess = (processPointer)malloc(sizeof(struct myProcess));
-        newProcess->pid = pid;
-        newProcess->priority = priority;
-        newProcess->arrivalTime = arrivalTime;
-        newProcess->CPUburst = CPUburst;
-        newProcess->IOburst = IOburst;
-        newProcess->CPUremainingTime = CPUburst;
-        newProcess->IOremainingTime = IOburst;
-        newProcess->waitingTime = 0;
-        newProcess->turnaroundTime = 0;
-        newProcess->responseTime = -1;
-        
-        //job queue에 넣는다.
-        insertInto_JQ(newProcess);
-
+    processPointer newProcess = (processPointer)malloc(sizeof(struct myProcess));
+    newProcess->pid = pid;
+    newProcess->priority = priority;
+    newProcess->arrivalTime = arrivalTime;
+    newProcess->CPUburst = CPUburst;
+    newProcess->IOburst = IOburst;
+    newProcess->CPUremainingTime = CPUburst;
+    newProcess->IOremainingTime = IOburst;
+    newProcess->waitingTime = 0;
+    newProcess->turnaroundTime = 0;
+    newProcess->responseTime = -1;
+    // Insert the process in to JQ (the first time?)
+    insertInto_JQ(newProcess);
     //debug
     //printf("%d %d %d %d created\n",newProcess.pid ,newProcess.priority, newProcess.arrivalTime, newProcess.CPUburst);
     return newProcess;
@@ -757,7 +758,7 @@ processPointer schedule(int alg, int preemptive, int time_quantum) { //The sched
 }
 
 void simulate(int amount, int alg, int preemptive, int time_quantum) {
-// First, put the processes arriving at the relevant time on the ready queue in the job queue. 
+	// First, put the processes arriving at the relevant time on the ready queue in the job queue. 
 	processPointer tempProcess = NULL;
 	int jobNum = cur_proc_num_JQ;
 	int i;
@@ -837,9 +838,13 @@ void analyize(int alg, int preemptive) {
 	int wait_sum = 0;
 	int turnaround_sum = 0;
 	int response_sum = 0;
+	int var_sum = 0;
+	int vart_sum = 0;
 	int i;
 	processPointer p=NULL;
-	puts  ("===========================================================");
+	int lastResponse;
+	int lastTurnaround;
+	printf  ("======================cur_proc_num_T: %d==========================\n",cur_proc_num_T);
 	for(i=0;i<cur_proc_num_T;i++){
 		p = terminated[i];
 		printf("(pid: %d)\n",p->pid);
@@ -851,8 +856,13 @@ void analyize(int alg, int preemptive) {
 		
 		puts  ("===========================================================");
 		wait_sum += p->waitingTime;
+		printf("variance = %d\n",abs(p->responseTime - lastResponse));
+		var_sum += abs(p->responseTime - lastResponse);
+		vart_sum += abs(p->turnaroundTime - lastTurnaround);
 		turnaround_sum += p->turnaroundTime;
 		response_sum += p->responseTime;
+		lastResponse = p->responseTime;
+		lastTurnaround = p->turnaroundTime;
 	}
 	printf("start time: %d / end time: %d / CPU utilization : %.2lf%% \n",Computation_start, Computation_end,
 	 (double)(Computation_end - Computation_idle)/(Computation_end - Computation_start)*100);
@@ -860,7 +870,9 @@ void analyize(int alg, int preemptive) {
 	if(cur_proc_num_T != 0) {
 		printf("Average waiting time: %d\n",wait_sum/cur_proc_num_T);
 		printf("Average turnaround time: %d\n",turnaround_sum/cur_proc_num_T);
+		printf("Turnaround variance : %d\n",var_sum/cur_proc_num_T);
 		printf("Average response time: %d\n",response_sum/cur_proc_num_T);
+		printf("Variance : %d\n",var_sum/cur_proc_num_T);
 	}	
 		printf("Completed: %d\n",cur_proc_num_T);
 		
@@ -868,9 +880,10 @@ void analyize(int alg, int preemptive) {
 		evalPointer newEval = (evalPointer)malloc(sizeof(struct evaluation));
 		newEval->alg = alg;
 		newEval->preemptive = preemptive;
-		
+		newEval->var_t = vart_sum/cur_proc_num_T;	
 		newEval->startTime = Computation_start;
 		newEval->endTime = Computation_end;
+		newEval->var = var_sum/cur_proc_num_T;
 		newEval->avg_waitingTime = wait_sum/cur_proc_num_T;
 		newEval->avg_turnaroundTime = turnaround_sum/cur_proc_num_T;
 		newEval->avg_responseTime = response_sum/cur_proc_num_T;
@@ -939,8 +952,8 @@ void startSimulation(int alg, int preemptive, int time_quantum, int count) {
 		}
 	}
 	Computation_end = i-1;
-	
-	analyize(alg, preemptive);
+    printf("&&&&&&& %d &&&&&&&\n",alg);	
+    analyize(alg, preemptive);
 	clear_JQ();
     clear_RQ();
     clear_T();
@@ -999,7 +1012,9 @@ void evaluate() {
 		printf("start time: %d / end time: %d / CPU utilization : %.2lf%% \n",evals[i]->startTime,evals[i]->endTime,evals[i]->CPU_util);
 		printf("Average waiting time: %d\n",evals[i]->avg_waitingTime);
 		printf("Average turnaround time: %d\n",evals[i]->avg_turnaroundTime);
+		printf("Average turnaround variance: %d\n",evals[i]->var_t);
 		printf("Average response time: %d\n",evals[i]->avg_responseTime);
+		printf("Average response variance: %d\n",evals[i]->var);
 		printf("Completed: %d\n",evals[i]->completed);
 	}
 	
@@ -1019,22 +1034,7 @@ void createProcesses(int total_num, int io_num) {
 	for(i=0;i<total_num; i++) {
 		//CPU burst : 5~20
 		//IO burst : 1~10
-		createProcess(i+1, rand() % total_num + 1, rand() % (total_num + 10), rand() % 16 + 5, 0);
-	}
-	
-	for(i=0;i<io_num;i++) {
-		
-		int randomIndex = rand() % total_num ;
-		if(jobQueue[randomIndex]->IOburst ==0) {
-		
-			int randomIOburst = rand() % 10 + 1;
-			jobQueue[randomIndex]->IOburst = randomIOburst;
-			jobQueue[randomIndex]->IOremainingTime = randomIOburst;
-		
-		} else {
-			i--;
-		}
-		
+		createProcess(i+1, rand() % total_num + 1, rand() % (total_num + 10), rand() % 16 + 5, 0); // <<int pid, int priority, int arrivalTime, int CPUburst, int IOburst>>
 	}
 	sort_JQ();
 	clone_JQ(); //backup this JQ
@@ -1052,25 +1052,24 @@ void main(int argc, char **argv) {
     int totalIOProcessNum = atoi(argv[2]); 
     createProcesses(totalProcessNum,totalIOProcessNum);
     int i;
-    int amount = 120;
- 	startSimulation(FCFS,FALSE,TIME_QUANTUM, amount);
+    int amount = 6000;  // scheduling round
+    startSimulation(FCFS,FALSE,TIME_QUANTUM, amount);
  	
     startSimulation(SJF,FALSE,TIME_QUANTUM, amount);
-    startSimulation(SJF,TRUE,TIME_QUANTUM, amount);
-	startSimulation(PRIORITY,FALSE,TIME_QUANTUM, amount);
-	startSimulation(PRIORITY,TRUE,TIME_QUANTUM, amount);
-	startSimulation(RR,TRUE,TIME_QUANTUM, amount);
-	startSimulation(LIF,FALSE, TIME_QUANTUM, amount);
-	startSimulation(LIF,TRUE, TIME_QUANTUM, amount);
-	startSimulation(LISC,FALSE, TIME_QUANTUM, amount);
-	startSimulation(LISC,TRUE, TIME_QUANTUM, amount);
-	evaluate();
+    //startSimulation(SJF,TRUE,TIME_QUANTUM, amount);
+    //startSimulation(PRIORITY,FALSE,TIME_QUANTUM, amount);
+    //startSimulation(PRIORITY,TRUE,TIME_QUANTUM, amount);
+    startSimulation(RR,TRUE,TIME_QUANTUM, amount);
+    //startSimulation(LIF,FALSE, TIME_QUANTUM, amount);
+    //startSimulation(LIF,TRUE, TIME_QUANTUM, amount);
+    //startSimulation(LISC,FALSE, TIME_QUANTUM, amount);
+    //startSimulation(LISC,TRUE, TIME_QUANTUM, amount);
+    evaluate();
 
-	clear_JQ();
+    clear_JQ();
     clear_RQ();
     clear_T();
     clear_WQ();
     clearClone_JQ();
-    
-	clear_evals();
+    clear_evals();
 }
